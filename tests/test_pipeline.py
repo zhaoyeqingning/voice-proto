@@ -1,0 +1,50 @@
+import asyncio
+
+from pipeline import TurnRequest, run_turn
+from player import FakePlayer
+from providers.fake import FakeAsr, FakeLlm, FakeTts
+
+
+def test_first_piece_is_synthesized_before_model_finishes():
+    async def scenario() -> None:
+        llm = FakeLlm("你好。这是还没说完的后半段。")
+        tts = FakeTts()
+        seen: dict[str, object] = {}
+
+        async def synthesize(text: str) -> bytes:
+            if "done" not in seen:
+                seen["done"] = llm.done
+                seen["text"] = text
+            return await FakeTts.synthesize(tts, text)
+
+        tts.synthesize = synthesize  # type: ignore[method-assign]
+        outcome = await run_turn(
+            TurnRequest(generation=1, history=[], user_text="在吗"),
+            asr=FakeAsr(),
+            llm=llm,
+            tts=tts,
+            player=FakePlayer(),
+            is_current=lambda: True,
+        )
+        assert seen["text"] == "你好。"
+        assert seen["done"] is False
+        assert outcome.spoken_text == "你好。这是还没说完的后半段。"
+        assert outcome.stale_audio_played == 0
+
+    asyncio.run(scenario())
+
+
+def test_audio_input_uses_the_transcript():
+    async def scenario() -> None:
+        llm = FakeLlm("好。")
+        await run_turn(
+            TurnRequest(generation=1, history=[], audio=b"\x00\x00"),
+            asr=FakeAsr("语音内容。"),
+            llm=llm,
+            tts=FakeTts(),
+            player=FakePlayer(),
+            is_current=lambda: True,
+        )
+        assert llm.seen_user == "语音内容。"
+
+    asyncio.run(scenario())
