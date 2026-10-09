@@ -90,14 +90,19 @@ def check_commit_files(text: str, files: list[str]) -> list[str]:
 
 
 def _git(*args: str, check: bool = True) -> str:
+    env = os.environ.copy()
+    env["GIT_TERMINAL_PROMPT"] = "0"
     result = subprocess.run(
-        ["git", *args],
+        ["git", "-c", "i18n.logOutputEncoding=utf-8", *args],
         cwd=ROOT,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         capture_output=True,
         check=check,
+        env=env,
     )
-    return result.stdout.strip()
+    return (result.stdout or "").strip()
 
 
 def _commit_message(sha: str) -> str:

@@ -49,6 +49,13 @@ docs(commit): 补充提交记录的阅读方式
     assert any("验证" in item for item in errors)
 
 
+def test_git_log_keeps_the_chinese_verification_line():
+    from check_commits import _commit_message, _git
+
+    message = _commit_message(_git("rev-parse", "HEAD"))
+    assert "验证：" in message
+
+
 def test_feat_commit_must_include_the_named_test_file():
     errors = check_commit_files(VALID_FEAT, ["session.py"])
     assert errors
