@@ -110,7 +110,7 @@ def _commit_message(sha: str) -> str:
 
 
 def _commit_files(sha: str) -> list[str]:
-    output = _git("diff-tree", "--no-commit-id", "--name-only", "-r", sha)
+    output = _git("diff-tree", "--root", "--no-commit-id", "--name-only", "-r", sha)
     return [line for line in output.splitlines() if line]
 
 

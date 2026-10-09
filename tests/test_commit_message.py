@@ -49,6 +49,13 @@ docs(commit): 补充提交记录的阅读方式
     assert any("验证" in item for item in errors)
 
 
+def test_root_commit_lists_its_test_file():
+    from check_commits import _commit_files, _git
+
+    root = _git("rev-list", "--max-parents=0", "HEAD").splitlines()[0]
+    assert "tests/test_commit_message.py" in _commit_files(root)
+
+
 def test_git_log_keeps_the_chinese_verification_line():
     from check_commits import _commit_message, _git
 
